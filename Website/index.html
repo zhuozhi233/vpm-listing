@@ -194,7 +194,6 @@
     }
 
     .toast.show { display: block; }
-
     [hidden] { display: none !important; }
 
     @media (max-width: 720px) {
@@ -246,6 +245,44 @@
       showToast.timer = setTimeout(() => $('toast').classList.remove('show'), 1300);
     }
 
+    async function readJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(url);
+      return res.json();
+    }
+
+    function githubPagesSourceUrl() {
+      if (!location.hostname.endsWith('.github.io')) return '';
+      const owner = location.hostname.replace('.github.io', '');
+      const repo = location.pathname.split('/').filter(Boolean)[0];
+      return owner && repo ? `https://raw.githubusercontent.com/${owner}/${repo}/main/source.json` : '';
+    }
+
+    async function loadListing() {
+      for (const path of ['../source.json', './source.json', './index.json']) {
+        try { return await readJson(path); } catch {}
+      }
+
+      const rawSource = githubPagesSourceUrl();
+      if (rawSource) return readJson(rawSource);
+      throw new Error('Listing data not found');
+    }
+
+    async function addSourceOnlyFields(listing) {
+      if (listing.githubRepos?.length) return listing;
+
+      const rawSource = githubPagesSourceUrl();
+      if (!rawSource) return listing;
+
+      try {
+        const source = await readJson(rawSource);
+        listing.githubRepos = source.githubRepos;
+        return listing;
+      } catch {
+        return listing;
+      }
+    }
+
     function createButton(text, href, primary) {
       const a = document.createElement('a');
       a.className = primary ? 'button primary' : 'button';
@@ -254,6 +291,20 @@
       a.target = '_blank';
       a.rel = 'noopener';
       return a;
+    }
+
+    function packageListFrom(data) {
+      if (Array.isArray(data)) return data;
+      return Object.entries(data || {}).map(([id, item]) => {
+        const versions = item.versions || {};
+        const version = Object.keys(versions).sort().at(-1);
+        const manifest = version ? versions[version] : {};
+        return {
+          name: manifest.displayName || id,
+          id,
+          description: manifest.description || ''
+        };
+      });
     }
 
     function renderPackage(pkg, listingUrl) {
@@ -267,7 +318,7 @@
         <div class="card-actions"></div>
       `;
 
-      card.querySelector('.card-title').textContent = pkg.displayName || pkg.name;
+      card.querySelector('.card-title').textContent = pkg.displayName || pkg.name || pkg.id;
       card.querySelector('.card-desc').textContent = pkg.description || '';
       card.querySelector('.card-actions').append(
         createButton('Add to VCC', `vcc://vpm/addRepo?url=${encodeURIComponent(listingUrl)}`, true)
@@ -302,24 +353,27 @@
     }
 
     function renderPackages(packages, listingUrl) {
-      $('packagesSection').hidden = !packages.length;
+      $('packagesSection').hidden = packages.length === 0;
       $('packagesList').replaceChildren(...packages.map((pkg) => renderPackage(pkg, listingUrl)));
 
       $('searchInput').addEventListener('input', () => {
         const keyword = $('searchInput').value.trim().toLowerCase();
-        const results = packages.filter((pkg) => `${pkg.displayName || ''} ${pkg.name || ''} ${pkg.description || ''}`.toLowerCase().includes(keyword));
+        const results = packages.filter((pkg) => `${pkg.displayName || ''} ${pkg.name || ''} ${pkg.id || ''} ${pkg.description || ''}`.toLowerCase().includes(keyword));
         $('packagesList').replaceChildren(...results.map((pkg) => renderPackage(pkg, listingUrl)));
       });
     }
 
     function renderRepos(repos) {
-      $('reposSection').hidden = !repos.length;
+      repos = repos || [];
+      $('reposSection').hidden = repos.length === 0;
       $('reposList').replaceChildren(...repos.map(renderRepo));
     }
 
-    fetch('./source.json')
-      .then((res) => res.json())
+    loadListing()
+      .then(addSourceOnlyFields)
       .then((listing) => {
+        const packages = packageListFrom(listing.packages);
+
         document.title = listing.name;
         $('listingName').textContent = listing.name;
         $('listingUrl').value = listing.url;
@@ -329,9 +383,10 @@
         $('addRepo').onclick = () => location.href = `vcc://vpm/addRepo?url=${encodeURIComponent(listing.url)}`;
         $('copyUrl').onclick = () => navigator.clipboard.writeText(listing.url).then(() => showToast('已复制 Listing URL'));
 
-        renderPackages(listing.packages, listing.url);
+        renderPackages(packages, listing.url);
         renderRepos(listing.githubRepos);
-      });
+      })
+      .catch((err) => console.error(err));
   </script>
 </body>
 </html>
