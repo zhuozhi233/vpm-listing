@@ -6,13 +6,14 @@
     "name": "浊鸷",
     "url": "https://github.com/zhuozhi233"
   },
-  "description": "浊鸷 VPM Listing",
+  "description": "浊鸷的 VRChat Creator Companion 软件包列表",
   "infoLink": {
-    "url": "https://github.com/zhuozhi233/MA2BT-Pro",
-    "text": "View on GitHub"
+    "url": "https://github.com/zhuozhi233/vpm-listing",
+    "text": "查看仓库"
   },
   "githubRepos": [
-    "zhuozhi233/MA2BT-Pro"
+    "zhuozhi233/MA2BT-Pro",
+    "zhuozhi233/LyumaShader-Extended"
   ],
   "packages": []
 }
