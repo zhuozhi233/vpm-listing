@@ -110,8 +110,34 @@ h1 {
 
 .search {
   max-width: 320px;
-  margin: 10px 0 14px;
+  margin: 10px 0 8px;
   padding: 0 14px;
+}
+
+.load-status {
+  min-height: 20px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.load-status:empty {
+  display: none;
+}
+
+.retry-button {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
 }
 
 .button {

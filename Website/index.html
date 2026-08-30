@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VPM Listing</title>
+  <title>浊鸷 Packages</title>
   <link rel="stylesheet" href="./styles.css" />
   <script src="./app.js" defer></script>
 </head>
@@ -11,20 +11,55 @@
   <main class="page">
     <section class="hero">
       <div class="badge">VPM Listing</div>
-      <h1 id="listingName">VPM Listing</h1>
-      <div id="authorLine" class="published"></div>
+      <h1 id="listingName">浊鸷 Packages</h1>
+      <div id="authorLine" class="published">Published by <a href="https://github.com/zhuozhi233" target="_blank" rel="noopener">浊鸷</a></div>
 
       <div class="repo-actions">
-        <input id="listingUrl" class="url-field" readonly aria-label="Listing URL" />
-        <button id="addRepo" class="button primary">Add to VCC</button>
+        <input id="listingUrl" class="url-field" readonly aria-label="Listing URL" value="https://zhuozhi233.github.io/vpm-listing/index.json" />
+        <a id="addRepo" class="button primary" href="vcc://vpm/addRepo?url=https%3A%2F%2Fzhuozhi233.github.io%2Fvpm-listing%2Findex.json">Add to VCC</a>
         <button id="copyUrl" class="button">Copy</button>
       </div>
     </section>
 
-    <section id="packagesSection" class="section" hidden>
+    <section id="packagesSection" class="section">
       <h2>Packages</h2>
       <input id="searchInput" class="search" type="search" placeholder="Search packages..." />
-      <div id="packagesList" class="list"></div>
+      <div id="packagesStatus" class="load-status" aria-live="polite">正在检查最新软件包信息…</div>
+      <div id="packagesList" class="list">
+        <article class="card">
+          <div>
+            <h3 class="card-title">LyumaShader 扩展版</h3>
+            <p class="card-desc">为 LyumaShader Waifu2d 增加 lilToon、Poiyomi、NDMF 非破坏式配置与批量处理支持。</p>
+            <div class="card-url">https://github.com/zhuozhi233/LyumaShader-Extended</div>
+          </div>
+          <div class="card-actions">
+            <a class="button primary" href="vcc://vpm/addRepo?url=https%3A%2F%2Fzhuozhi233.github.io%2Fvpm-listing%2Findex.json">Add to VCC</a>
+            <a class="button" href="https://github.com/zhuozhi233/LyumaShader-Extended" target="_blank" rel="noopener">Open on GitHub</a>
+          </div>
+        </article>
+        <article class="card">
+          <div>
+            <h3 class="card-title">lilToon 距离显示</h3>
+            <p class="card-desc">为指定的 lilToon 材质添加可配置的近端、远端和区间距离显示，并支持抖动过渡与一键还原。</p>
+            <div class="card-url">https://github.com/zhuozhi233/lilToon-Distance-Visibility</div>
+          </div>
+          <div class="card-actions">
+            <a class="button primary" href="vcc://vpm/addRepo?url=https%3A%2F%2Fzhuozhi233.github.io%2Fvpm-listing%2Findex.json">Add to VCC</a>
+            <a class="button" href="https://github.com/zhuozhi233/lilToon-Distance-Visibility" target="_blank" rel="noopener">Open on GitHub</a>
+          </div>
+        </article>
+        <article class="card">
+          <div>
+            <h3 class="card-title">MA2BT Pro</h3>
+            <p class="card-desc">将 Modular Avatar 响应式组件转换为 BlendTree，减少 Animator Layer 数量，优化 Avatar 性能。</p>
+            <div class="card-url">https://github.com/zhuozhi233/MA2BT-Pro</div>
+          </div>
+          <div class="card-actions">
+            <a class="button primary" href="vcc://vpm/addRepo?url=https%3A%2F%2Fzhuozhi233.github.io%2Fvpm-listing%2Findex.json">Add to VCC</a>
+            <a class="button" href="https://github.com/zhuozhi233/MA2BT-Pro" target="_blank" rel="noopener">Open on GitHub</a>
+          </div>
+        </article>
+      </div>
     </section>
 
     <div class="footer-note">添加到 VCC 后，可以在项目中安装这里发布的包。</div>

@@ -1,5 +1,36 @@
 const $ = (id) => document.getElementById(id);
 
+const FALLBACK_LISTING = {
+  name: '浊鸷 VPM Listing',
+  url: 'https://zhuozhi233.github.io/vpm-listing/index.json',
+  author: {
+    name: '浊鸷',
+    url: 'https://github.com/zhuozhi233'
+  },
+  githubRepos: [
+    'zhuozhi233/LyumaShader-Extended',
+    'zhuozhi233/lilToon-Distance-Visibility',
+    'zhuozhi233/MA2BT-Pro'
+  ],
+  packages: [
+    {
+      id: 'com.zhuozhi.lyumashader-extended',
+      displayName: 'LyumaShader 扩展版',
+      description: '为 LyumaShader Waifu2d 增加 lilToon、Poiyomi、NDMF 非破坏式配置与批量处理支持。'
+    },
+    {
+      id: 'com.zhuozhi.liltoon-distance-visibility',
+      displayName: 'lilToon 距离显示',
+      description: '为指定的 lilToon 材质添加可配置的近端、远端和区间距离显示，并支持抖动过渡与一键还原。'
+    },
+    {
+      id: 'com.zhuozhi.ma2bt-pro',
+      displayName: 'MA2BT Pro',
+      description: '将 Modular Avatar 响应式组件转换为 BlendTree，减少 Animator Layer 数量，优化 Avatar 性能。'
+    }
+  ]
+};
+
 function showToast(text) {
   $('toast').textContent = text;
   $('toast').classList.add('show');
@@ -7,24 +38,17 @@ function showToast(text) {
   showToast.timer = setTimeout(() => $('toast').classList.remove('show'), 1300);
 }
 
-async function readJson(url) {
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(url);
-  return res.json();
-}
+async function readJson(url, timeout = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
 
-async function firstJson(paths) {
-  for (const path of paths.filter(Boolean)) {
-    try { return await readJson(path); } catch {}
+  try {
+    const res = await fetch(url, { cache: 'default', signal: controller.signal });
+    if (!res.ok) throw new Error(url);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  return {};
-}
-
-function rawSourceUrl() {
-  if (!location.hostname.endsWith('.github.io')) return '';
-  const owner = location.hostname.replace('.github.io', '');
-  const repo = location.pathname.split('/').filter(Boolean)[0];
-  return owner && repo ? `https://raw.githubusercontent.com/${owner}/${repo}/main/source.json` : '';
 }
 
 function hasPackages(packages) {
@@ -33,16 +57,13 @@ function hasPackages(packages) {
 }
 
 async function loadListing() {
-  const indexData = await firstJson(['./index.json', './source.json', '../source.json']);
-  const sourceData = await firstJson(['./source.json', '../source.json', rawSourceUrl()]);
-
-  const listing = { ...sourceData, ...indexData };
-  listing.name = sourceData.name || indexData.name || 'VPM Listing';
-  listing.url = sourceData.url || indexData.url || '';
-  listing.author = sourceData.author || indexData.author || {};
-  listing.infoLink = sourceData.infoLink || indexData.infoLink;
-  listing.githubRepos = sourceData.githubRepos || indexData.githubRepos || [];
-  listing.packages = hasPackages(indexData.packages) ? indexData.packages : (sourceData.packages || []);
+  const indexData = await readJson('./index.json');
+  const listing = { ...FALLBACK_LISTING, ...indexData };
+  listing.name = indexData.name || FALLBACK_LISTING.name;
+  listing.url = indexData.url || FALLBACK_LISTING.url;
+  listing.author = indexData.author || FALLBACK_LISTING.author;
+  listing.githubRepos = indexData.githubRepos?.length ? indexData.githubRepos : FALLBACK_LISTING.githubRepos;
+  listing.packages = hasPackages(indexData.packages) ? indexData.packages : FALLBACK_LISTING.packages;
   return listing;
 }
 
@@ -162,7 +183,7 @@ function renderPackages(listing) {
   $('packagesSection').hidden = cards.length === 0;
   $('packagesList').replaceChildren(...cards);
 
-  $('searchInput').addEventListener('input', () => {
+  $('searchInput').oninput = () => {
     const keyword = $('searchInput').value.trim().toLowerCase();
     const filtered = packages.length
       ? packages.filter((pkg) => `${pkg.displayName || ''} ${pkg.name || ''} ${pkg.id || ''} ${pkg.description || ''}`.toLowerCase().includes(keyword))
@@ -173,39 +194,61 @@ function renderPackages(listing) {
       : filtered.map((repo) => renderPackage({ name: repoName(repo) }, repo, listing.url));
 
     $('packagesList').replaceChildren(...newCards);
-  });
+  };
 }
 
-loadListing()
-  .then((listing) => {
-    const title = displayTitle(listing.name);
-    const name = authorName(listing.author);
-    const url = authorUrl(listing.author);
+function applyListing(listing) {
+  const title = displayTitle(listing.name);
+  const name = authorName(listing.author);
+  const url = authorUrl(listing.author);
 
-    document.title = title;
-    $('listingName').textContent = title;
-    $('listingUrl').value = listing.url;
+  document.title = title;
+  $('listingName').textContent = title;
+  $('listingUrl').value = listing.url;
+  $('addRepo').href = `vcc://vpm/addRepo?url=${encodeURIComponent(listing.url)}`;
 
-    $('authorLine').textContent = 'Published by ';
-    if (name) {
-      const author = document.createElement(url ? 'a' : 'span');
-      author.textContent = name;
-      if (url) {
-        author.href = url;
-        author.target = '_blank';
-        author.rel = 'noopener';
-      }
-      $('authorLine').append(author);
+  $('authorLine').textContent = 'Published by ';
+  if (name) {
+    const author = document.createElement(url ? 'a' : 'span');
+    author.textContent = name;
+    if (url) {
+      author.href = url;
+      author.target = '_blank';
+      author.rel = 'noopener';
     }
+    $('authorLine').append(author);
+  }
 
-    $('addRepo').onclick = () => {
-      if (listing.url) location.href = `vcc://vpm/addRepo?url=${encodeURIComponent(listing.url)}`;
-    };
+  $('copyUrl').onclick = () => {
+    navigator.clipboard.writeText(listing.url).then(() => showToast('已复制 Listing URL'));
+  };
 
-    $('copyUrl').onclick = () => {
-      navigator.clipboard.writeText(listing.url).then(() => showToast('已复制 Listing URL'));
-    };
+  renderPackages(listing);
+}
 
-    renderPackages(listing);
-  })
-  .catch((err) => console.error(err));
+function showLoadError() {
+  const status = $('packagesStatus');
+  status.textContent = '最新数据暂时无法加载，当前显示基本软件包信息。';
+
+  const retry = document.createElement('button');
+  retry.className = 'retry-button';
+  retry.textContent = '重试';
+  retry.onclick = refreshListing;
+  status.append(retry);
+}
+
+async function refreshListing() {
+  $('packagesStatus').textContent = '正在检查最新软件包信息…';
+
+  try {
+    const listing = await loadListing();
+    applyListing(listing);
+    $('packagesStatus').textContent = '';
+  } catch (err) {
+    console.error(err);
+    showLoadError();
+  }
+}
+
+applyListing(FALLBACK_LISTING);
+refreshListing();
