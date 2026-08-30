@@ -238,7 +238,7 @@ function showLoadError() {
 }
 
 async function refreshListing() {
-  $('packagesStatus').textContent = '正在检查最新软件包信息…';
+  $('packagesStatus').textContent = '';
 
   try {
     const listing = await loadListing();
